@@ -31,29 +31,37 @@ const ROUTES: Route[] = [
   {
     useCorrelation: true,
     steps: [
-      { service: 'client',   line: 'calling bff POST /api/resource __CID__ req-id=__REQ__' },
-      { service: 'bff',      line: 'fetching data from calling core-ms __CID__ request-id=__REQ__' },
-      { service: 'core-ms',  line: 'calling products-ms to resolve catalog __CID__ req-id=__REQ__' },
+      { service: 'client',  line: 'calling bff POST /api/resource __CID__ req-id=__REQ__' },
+      { service: 'bff',     line: 'calling core-ms GET /api/data __CID__ request-id=__REQ__' },
+      { service: 'core-ms', line: 'calling products-ms productsService:getProducts __CID__ req-id=__REQ__' },
     ],
   },
   {
     steps: [
-      { service: 'client',      line: 'GET /api/tenants calling bff req-id=__REQ__' },
-      { service: 'bff',         line: 'calling tenants-api for tenant lookup req-id=__REQ__' },
+      { service: 'client',     line: 'calling bff GET /api/tenants req-id=__REQ__' },
+      { service: 'bff',        line: 'calling tenants-api GET /api/tenants req-id=__REQ__' },
     ],
   },
   {
     useCorrelation: true,
     steps: [
       { service: 'client',  line: 'POST /api/submit calling bff __CID__ req-id=__REQ__' },
-      { service: 'bff',     line: 'calling core-ms for processing __CID__ req-id=__REQ__' },
-      { service: 'core-ms', line: 'fetching products from calling products-ms __CID__ req-id=__REQ__' },
+      { service: 'bff',     line: 'calling core-ms POST /api/process __CID__ req-id=__REQ__' },
+      { service: 'core-ms', line: 'calling products-ms productsService:getProduct __CID__ req-id=__REQ__' },
     ],
   },
   {
     steps: [
       { service: 'client', line: 'calling bff GET /api/items req-id=__REQ__' },
-      { service: 'bff',    line: 'calling core-ms req-id=__REQ__' },
+      { service: 'bff',    line: 'calling core-ms GET /api/items req-id=__REQ__' },
+    ],
+  },
+  {
+    useCorrelation: true,
+    steps: [
+      { service: 'client',  line: 'calling bff POST /api/sync __CID__ req-id=__REQ__' },
+      { service: 'bff',     line: 'calling core-ms POST /api/resource __CID__ req-id=__REQ__' },
+      { service: 'core-ms', line: 'calling products-ms catalogService:listProducts __CID__ req-id=__REQ__' },
     ],
   },
 ];
@@ -64,7 +72,7 @@ const ERROR_SCENARIOS: Step[][] = [
   [{ service: 'bff',      line: '[Error] calling tenants-api failed: 503 req-id=__REQ__' }],
   [{ service: 'client',   line: '[ERROR] calling bff timeout req-id=__REQ__' }],
   [
-    { service: 'bff',     line: 'calling core-ms for processing req-id=__REQ__' },
+    { service: 'bff',     line: 'calling core-ms POST /api/process req-id=__REQ__' },
     { service: 'core-ms', line: '[Error] calling products-ms not found req-id=__REQ__' },
   ],
 ];

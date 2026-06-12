@@ -42,8 +42,9 @@ Open [http://localhost:3000](http://localhost:3000).
 
 1. The backend watches log files (`packages/backend/logs/<service>.log`) via `fs.watchFile`.
 2. Each new line is matched against the patterns defined in `config/patterns.json`.
-3. A match emits a `FlowEvent` (`from`, `to`, `correlationId`, `isError`) over WebSocket.
+3. A match emits a `FlowEvent` (`from`, `to`, `correlationId`, `path`, `isError`) over WebSocket.
 4. The frontend receives events and animates particles along SVG edges between nodes.
+5. Each node displays the top-7 most called paths/methods above it, ranked by hit count.
 
 ---
 
@@ -100,8 +101,16 @@ Defines what to detect per service.
   {
     "service": "bff",
     "patterns": [
-      { "to": "core-ms",    "match": "calling core-ms" },
-      { "to": "tenants-api", "match": "calling tenants-api" }
+      {
+        "to": "core-ms",
+        "match": "calling core-ms",
+        "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)"
+      },
+      {
+        "to": "tenants-api",
+        "match": "calling tenants-api",
+        "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)"
+      }
     ],
     "errorPatterns": ["[Error]", "[ERROR]", "ECONNREFUSED", "failed"]
   }
@@ -113,7 +122,22 @@ Defines what to detect per service.
 | `service` | Must match a node name in `topology.json` |
 | `patterns[].match` | Substring to look for in a log line |
 | `patterns[].to` | Target node when the pattern matches |
+| `patterns[].pathPattern` | Optional regex — capture group 1 becomes `FlowEvent.path`. Used to surface the called route or method |
 | `errorPatterns` | Substrings that mark a line as an error — triggers red particle and red node glow |
+
+**`pathPattern` examples**
+
+The regex is applied to the full log line after a flow pattern matches. Capture group 1 is the path.
+
+| Protocol | `pathPattern` | Extracted from |
+|---|---|---|
+| HTTP (any verb) | `"(?:POST\|GET\|PUT\|DELETE)\\s+(/[\\w/.-]+)"` | `calling bff POST /api/resource` → `/api/resource` |
+| HTTP (specific verb) | `"POST\\s+(/[\\w/.-]+)"` | `POST /api/submit` → `/api/submit` |
+| gRPC (service:method) | `"(\\w+(?:Service\|Api\|Client):\\w+)"` | `productsService:getProduct` → `productsService:getProduct` |
+| gRPC (method only) | `"\\w+(?:Service\|Api\|Client):(\\w+)"` | `productsService:getProduct` → `getProduct` |
+| Custom | any regex with one capture group | capture group 1 |
+
+Paths accumulate per destination node. The top-7 most frequent paths are displayed above each node in the graph. Paths longer than 22 characters are truncated — hover over the label to see the full value.
 
 **Match priority:** if a line matches both a flow pattern and an error pattern, a single red-particle event is emitted with the correct `from`/`to`. If only an error pattern matches (no flow target known), a self-event is emitted — the source node pulses red.
 
@@ -178,6 +202,7 @@ type FlowEvent = {
   timestamp: number;      // Unix ms
   requestId?: string;     // extracted from req-id=... / request-id=...
   correlationId?: string; // extracted from "<correlationKeyField>":"..."
+  path?: string;          // extracted via pathPattern — route or gRPC method
   isError?: boolean;      // true when an error pattern matched
 };
 ```
@@ -218,7 +243,7 @@ traffic-visualizer/
 │           │   └── useTopology.ts        ← fetches topology on mount
 │           └── components/
 │               ├── TopologyCanvas/       ← SVG layout, particle orchestration
-│               ├── ServiceNode/          ← node with activity + error glow
+│               ├── ServiceNode/          ← node with activity/error glow + top-7 path labels
 │               ├── TrafficEdge/          ← bezier edge with intensity
 │               ├── TrafficParticle/      ← rAF-animated particle
 │               └── StatsPanel/           ← in/out/error counters per node

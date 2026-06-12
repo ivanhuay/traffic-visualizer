@@ -1,5 +1,5 @@
 import type { FlowEvent } from '../types/index.js';
-import type { PatternConfig } from '../types/index.js';
+import type { PatternConfig, Pattern } from '../types/index.js';
 
 const REQUEST_ID_RE = /req(?:uest)?[-_]?id[=:\s]+([a-zA-Z0-9-]+)/i;
 
@@ -28,12 +28,14 @@ export class PatternDetector {
 
     for (const pattern of serviceConfig.patterns) {
       if (line.includes(pattern.match)) {
+        const path = extractPath(line, pattern);
         return [
           {
             from: service,
             to: pattern.to,
             timestamp: Date.now(),
             ...extras,
+            ...(path !== undefined ? { path } : {}),
             ...(isError ? { isError: true } : {}),
           },
         ];
@@ -45,5 +47,15 @@ export class PatternDetector {
     }
 
     return [];
+  }
+}
+
+function extractPath(line: string, pattern: Pattern): string | undefined {
+  if (!pattern.pathPattern) return undefined;
+  try {
+    const match = line.match(new RegExp(pattern.pathPattern));
+    return match?.[1];
+  } catch {
+    return undefined;
   }
 }

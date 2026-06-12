@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ServiceNode } from '../ServiceNode/ServiceNode.js';
+import type { PathCount } from '../ServiceNode/ServiceNode.js';
 import { TrafficEdge, edgePath } from '../TrafficEdge/TrafficEdge.js';
 import { TrafficParticle } from '../TrafficParticle/TrafficParticle.js';
 import { StatsPanel } from '../StatsPanel/StatsPanel.js';
@@ -22,6 +23,7 @@ const DECAY_MS = 3000;
 const ERROR_DECAY_MS = 2000;
 const PARTICLE_DURATION = 1000;
 const ERROR_COLOR = '#f87171';
+const PATH_LIMIT = 7;
 
 function computeLayout(nodes: string[], width: number, height: number): Record<string, NodePosition> {
   const cols = Math.ceil(Math.sqrt(nodes.length));
@@ -48,6 +50,13 @@ function colorFromKey(key: string): string {
   return `hsl(${hue}, 75%, 65%)`;
 }
 
+function topPaths(counts: Record<string, number>): PathCount[] {
+  return Object.entries(counts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, PATH_LIMIT)
+    .map(([path, count]) => ({ path, count }));
+}
+
 let particleCounter = 0;
 
 export function TopologyCanvas({ topology, events }: Props) {
@@ -57,6 +66,7 @@ export function TopologyCanvas({ topology, events }: Props) {
   const [activity, setActivity] = useState<ActivityMap>({});
   const [errorActivity, setErrorActivity] = useState<ActivityMap>({});
   const [stats, setStats] = useState<Record<string, NodeStats>>({});
+  const [pathCounts, setPathCounts] = useState<Record<string, Record<string, number>>>({});
   const processedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -113,6 +123,18 @@ export function TopologyCanvas({ topology, events }: Props) {
         setTimeout(() => {
           setActivity((prev) => ({ ...prev, [event.from]: 0, [event.to]: 0 }));
         }, DECAY_MS);
+      }
+
+      if (event.path && !isSelfError) {
+        const dest = event.to;
+        const p = event.path;
+        setPathCounts((prev) => ({
+          ...prev,
+          [dest]: {
+            ...prev[dest],
+            [p]: ((prev[dest]?.[p]) ?? 0) + 1,
+          },
+        }));
       }
 
       setStats((prev) => {
@@ -191,6 +213,7 @@ export function TopologyCanvas({ topology, events }: Props) {
                 active={(activity[node] ?? 0) > 0}
                 activityLevel={activity[node] ?? 0}
                 errorLevel={errorActivity[node] ?? 0}
+                topPaths={topPaths(pathCounts[node] ?? {})}
               />
             );
           })}

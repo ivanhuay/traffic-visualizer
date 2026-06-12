@@ -2,26 +2,26 @@
   {
     "service": "client",
     "patterns": [
-      { "to": "bff", "match": "calling bff" },
-      { "to": "bff", "match": "POST /api" },
-      { "to": "bff", "match": "GET /api" }
+      { "to": "bff", "match": "calling bff",  "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)" },
+      { "to": "bff", "match": "POST /api",    "pathPattern": "POST\\s+(/[\\w/.-]+)" },
+      { "to": "bff", "match": "GET /api",     "pathPattern": "GET\\s+(/[\\w/.-]+)" }
     ],
     "errorPatterns": ["[Error]", "[ERROR]", "ECONNREFUSED", "timeout"]
   },
   {
     "service": "bff",
     "patterns": [
-      { "to": "tenants-api", "match": "calling tenants-api" },
-      { "to": "core-ms", "match": "calling core-ms" },
-      { "to": "core-ms", "match": "fetching data" }
+      { "to": "tenants-api", "match": "calling tenants-api", "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)" },
+      { "to": "core-ms",     "match": "calling core-ms",     "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)" },
+      { "to": "core-ms",     "match": "fetching data",       "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)" }
     ],
     "errorPatterns": ["[Error]", "[ERROR]", "upstream error", "failed", "ECONNREFUSED"]
   },
   {
     "service": "core-ms",
     "patterns": [
-      { "to": "products-ms", "match": "calling products-ms" },
-      { "to": "products-ms", "match": "fetching products" }
+      { "to": "products-ms", "match": "calling products-ms", "pathPattern": "(\\w+(?:Service|Api|Client):\\w+)" },
+      { "to": "products-ms", "match": "fetching products",   "pathPattern": "(\\w+(?:Service|Api|Client):\\w+)" }
     ],
     "errorPatterns": ["[Error]", "[ERROR]", "not found", "failed", "ECONNREFUSED"]
   },

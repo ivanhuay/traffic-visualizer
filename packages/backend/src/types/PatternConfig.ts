@@ -1,6 +1,7 @@
 export type Pattern = {
   to: string;
   match: string;
+  pathPattern?: string;
 };
 
 export type ServicePatterns = {

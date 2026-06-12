@@ -4,5 +4,6 @@ export type FlowEvent = {
   timestamp: number;
   requestId?: string;
   correlationId?: string;
+  path?: string;
   isError?: boolean;
 };

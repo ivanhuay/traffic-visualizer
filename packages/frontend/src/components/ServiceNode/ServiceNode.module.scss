@@ -37,6 +37,33 @@
   user-select: none;
 }
 
+.paths {
+  pointer-events: all;
+}
+
+.pathLabel {
+  font-size: 9.5px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  cursor: default;
+}
+
+.pathText {
+  fill: #64748b;
+  transition: fill 0.15s ease;
+
+  .node:hover & {
+    fill: #94a3b8;
+  }
+}
+
+.pathCount {
+  fill: #334155;
+
+  .node:hover & {
+    fill: #475569;
+  }
+}
+
 .active .body {
   stroke: #38bdf8;
   stroke-width: 2;
