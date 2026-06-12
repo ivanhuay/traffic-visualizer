@@ -1,0 +1,10 @@
+{
+  "correlationKeyField": "idempotency-key",
+  "nodes": ["client", "bff", "tenants-api", "core-ms", "products-ms"],
+  "edges": [
+    ["client", "bff"],
+    ["bff", "tenants-api"],
+    ["bff", "core-ms"],
+    ["core-ms", "products-ms"]
+  ]
+}

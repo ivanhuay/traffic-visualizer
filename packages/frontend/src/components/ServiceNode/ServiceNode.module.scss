@@ -1,0 +1,48 @@
+.node {
+  cursor: default;
+}
+
+.body {
+  fill: #0f1923;
+  stroke: #2a4a6b;
+  stroke-width: 1.5;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+.glow {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 8;
+  filter: blur(6px);
+  opacity: calc(var(--glow-opacity, 0) * 0.75);
+  transition: opacity 0.4s ease;
+}
+
+.errorGlow {
+  fill: none;
+  stroke: #f87171;
+  stroke-width: 8;
+  filter: blur(6px);
+  opacity: calc(var(--error-opacity, 0) * 0.85);
+  transition: opacity 0.3s ease;
+}
+
+.label {
+  fill: #e2e8f0;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.active .body {
+  stroke: #38bdf8;
+  stroke-width: 2;
+}
+
+.error .body {
+  stroke: #f87171;
+  stroke-width: 2;
+}

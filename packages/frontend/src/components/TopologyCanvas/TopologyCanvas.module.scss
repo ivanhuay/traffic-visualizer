@@ -1,0 +1,21 @@
+.container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas {
+  display: block;
+  background: transparent;
+}
+
+.edges,
+.particles,
+.nodes {
+  pointer-events: none;
+}
+
+.nodes {
+  pointer-events: all;
+}

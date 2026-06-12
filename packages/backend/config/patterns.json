@@ -1,0 +1,38 @@
+[
+  {
+    "service": "client",
+    "patterns": [
+      { "to": "bff", "match": "calling bff" },
+      { "to": "bff", "match": "POST /api" },
+      { "to": "bff", "match": "GET /api" }
+    ],
+    "errorPatterns": ["[Error]", "[ERROR]", "ECONNREFUSED", "timeout"]
+  },
+  {
+    "service": "bff",
+    "patterns": [
+      { "to": "tenants-api", "match": "calling tenants-api" },
+      { "to": "core-ms", "match": "calling core-ms" },
+      { "to": "core-ms", "match": "fetching data" }
+    ],
+    "errorPatterns": ["[Error]", "[ERROR]", "upstream error", "failed", "ECONNREFUSED"]
+  },
+  {
+    "service": "core-ms",
+    "patterns": [
+      { "to": "products-ms", "match": "calling products-ms" },
+      { "to": "products-ms", "match": "fetching products" }
+    ],
+    "errorPatterns": ["[Error]", "[ERROR]", "not found", "failed", "ECONNREFUSED"]
+  },
+  {
+    "service": "tenants-api",
+    "patterns": [],
+    "errorPatterns": ["[Error]", "[ERROR]", "unauthorized", "failed"]
+  },
+  {
+    "service": "products-ms",
+    "patterns": [],
+    "errorPatterns": ["[Error]", "[ERROR]", "out of stock", "failed"]
+  }
+]

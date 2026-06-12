@@ -1,0 +1,95 @@
+.panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(6, 13, 20, 0.85);
+  border: 1px solid #1a2a3a;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 220px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.totals {
+  display: flex;
+  gap: 8px;
+}
+
+.totalIn {
+  color: #38bdf8;
+}
+
+.totalErr {
+  color: #f87171;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+
+  th {
+    text-align: right;
+    color: #334155;
+    font-weight: 500;
+    padding: 2px 6px;
+    letter-spacing: 0.05em;
+
+    &:first-child {
+      text-align: left;
+    }
+  }
+
+  td {
+    padding: 3px 6px;
+    text-align: right;
+    color: #64748b;
+
+    &:first-child {
+      text-align: left;
+    }
+  }
+
+  tr:hover td {
+    color: #94a3b8;
+  }
+}
+
+.nodeName {
+  color: #94a3b8 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+}
+
+.countIn {
+  color: #38bdf8 !important;
+}
+
+.countOut {
+  color: #818cf8 !important;
+}
+
+.countErr {
+  color: #f87171 !important;
+}
+
+.countZero {
+  color: #1e3a4a !important;
+}
+
+.hasError td {
+  background: rgba(248, 113, 113, 0.04);
+}
