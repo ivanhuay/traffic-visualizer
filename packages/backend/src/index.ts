@@ -38,7 +38,12 @@ async function main() {
   });
 
   for (const node of topology.nodes) {
-    const logPath = resolve(LOG_DIR, `${node}.log`);
+    const svc = patterns.find((p) => p.service === node);
+    const logPath = svc?.logFile
+      ? svc.logFile
+      : svc?.logFileName
+        ? resolve(LOG_DIR, svc.logFileName)
+        : resolve(LOG_DIR, `${node}.log`);
     tailAdapter.watch(node, logPath);
   }
 

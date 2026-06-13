@@ -120,10 +120,19 @@ Defines what to detect per service.
 | Field | Description |
 |---|---|
 | `service` | Must match a node name in `topology.json` |
+| `logFile` | Optional. Absolute path to the log file for this service. Overrides `LOG_DIR` |
+| `logFileName` | Optional. Filename resolved inside `LOG_DIR`. Useful when the file name differs from the service name |
 | `patterns[].match` | Substring to look for in a log line |
 | `patterns[].to` | Target node when the pattern matches |
 | `patterns[].pathPattern` | Optional regex — capture group 1 becomes `FlowEvent.path`. Used to surface the called route or method |
 | `errorPatterns` | Substrings that mark a line as an error — triggers red particle and red node glow |
+
+Log file resolution order per service: `logFile` → `logFileName` (resolved in `LOG_DIR`) → `${LOG_DIR}/${service}.log`.
+
+```json
+{ "service": "bff", "logFile": "/var/log/myapp/bff.log", "patterns": [] }
+{ "service": "bff", "logFileName": "bff-service.log",    "patterns": [] }
+```
 
 **`pathPattern` examples**
 
