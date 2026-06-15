@@ -2,6 +2,7 @@ export type Pattern = {
   to: string;
   match: string;
   pathPattern?: string;
+  logFileName?: string;
 };
 
 export type ServicePatterns = {

@@ -2,9 +2,12 @@
   {
     "service": "client",
     "patterns": [
-      { "to": "bff", "match": "calling bff",  "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)" },
-      { "to": "bff", "match": "POST /api",    "pathPattern": "POST\\s+(/[\\w/.-]+)" },
-      { "to": "bff", "match": "GET /api",     "pathPattern": "GET\\s+(/[\\w/.-]+)" }
+      {
+        "logFileName": "bff.log",
+        "to": "bff",
+        "match": "incoming",
+        "pathPattern": "(?:POST|GET|PUT|DELETE)\\s+(/[\\w/.-]+)"
+      }
     ],
     "errorPatterns": ["[Error]", "[ERROR]", "ECONNREFUSED", "timeout"]
   },

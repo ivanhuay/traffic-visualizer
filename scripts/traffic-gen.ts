@@ -2,6 +2,12 @@
  * Fake traffic log generator for demo purposes.
  * Writes log lines to packages/backend/logs/<service>.log
  *
+ * Demo feature: client→bff events are detected from bff.log.
+ * The BFF logs incoming requests ("incoming POST /api/...") which
+ * the client detector picks up via pattern-level logFileName override.
+ * bff.log is tailed once; both the "client" and "bff" detectors
+ * receive every line (LogTailAdapter deduplication).
+ *
  * Usage:
  *   pnpm traffic-gen                  — 3 req/s steady
  *   pnpm traffic-gen --rate=10        — 10 req/s
@@ -27,39 +33,44 @@ const WITH_ERRORS = args.includes('--errors');
 type Step = { service: string; line: string };
 type Route = { steps: Step[]; useCorrelation?: boolean };
 
+// Note: client→bff events are written to bff.log as "incoming" lines.
+// The "client" detector reads bff.log (pattern-level logFileName: "bff.log")
+// and matches "incoming" → emits client→bff FlowEvent.
+// The "bff" detector reads the same bff.log and matches "calling *" lines.
+// LogTailAdapter tails bff.log once and dispatches to both detectors.
 const ROUTES: Route[] = [
   {
     useCorrelation: true,
     steps: [
-      { service: 'client',  line: 'calling bff POST /api/resource __CID__ req-id=__REQ__' },
+      { service: 'bff',     line: 'incoming POST /api/resource __CID__ req-id=__REQ__' },
       { service: 'bff',     line: 'calling core-ms GET /api/data __CID__ request-id=__REQ__' },
       { service: 'core-ms', line: 'calling products-ms productsService:getProducts __CID__ req-id=__REQ__' },
     ],
   },
   {
     steps: [
-      { service: 'client',     line: 'calling bff GET /api/tenants req-id=__REQ__' },
-      { service: 'bff',        line: 'calling tenants-api GET /api/tenants req-id=__REQ__' },
+      { service: 'bff', line: 'incoming GET /api/tenants req-id=__REQ__' },
+      { service: 'bff', line: 'calling tenants-api GET /api/tenants req-id=__REQ__' },
     ],
   },
   {
     useCorrelation: true,
     steps: [
-      { service: 'client',  line: 'POST /api/submit calling bff __CID__ req-id=__REQ__' },
+      { service: 'bff',     line: 'incoming POST /api/submit __CID__ req-id=__REQ__' },
       { service: 'bff',     line: 'calling core-ms POST /api/process __CID__ req-id=__REQ__' },
       { service: 'core-ms', line: 'calling products-ms productsService:getProduct __CID__ req-id=__REQ__' },
     ],
   },
   {
     steps: [
-      { service: 'client', line: 'calling bff GET /api/items req-id=__REQ__' },
-      { service: 'bff',    line: 'calling core-ms GET /api/items req-id=__REQ__' },
+      { service: 'bff', line: 'incoming GET /api/items req-id=__REQ__' },
+      { service: 'bff', line: 'calling core-ms GET /api/items req-id=__REQ__' },
     ],
   },
   {
     useCorrelation: true,
     steps: [
-      { service: 'client',  line: 'calling bff POST /api/sync __CID__ req-id=__REQ__' },
+      { service: 'bff',     line: 'incoming POST /api/sync __CID__ req-id=__REQ__' },
       { service: 'bff',     line: 'calling core-ms POST /api/resource __CID__ req-id=__REQ__' },
       { service: 'core-ms', line: 'calling products-ms catalogService:listProducts __CID__ req-id=__REQ__' },
     ],
@@ -67,10 +78,10 @@ const ROUTES: Route[] = [
 ];
 
 const ERROR_SCENARIOS: Step[][] = [
-  [{ service: 'bff',      line: '[Error] upstream error calling core-ms: ECONNREFUSED req-id=__REQ__' }],
-  [{ service: 'core-ms',  line: '[ERROR] calling products-ms failed: timeout req-id=__REQ__' }],
-  [{ service: 'bff',      line: '[Error] calling tenants-api failed: 503 req-id=__REQ__' }],
-  [{ service: 'client',   line: '[ERROR] calling bff timeout req-id=__REQ__' }],
+  [{ service: 'bff',     line: '[Error] upstream error calling core-ms: ECONNREFUSED req-id=__REQ__' }],
+  [{ service: 'core-ms', line: '[ERROR] calling products-ms failed: timeout req-id=__REQ__' }],
+  [{ service: 'bff',     line: '[Error] calling tenants-api failed: 503 req-id=__REQ__' }],
+  [{ service: 'bff',     line: '[ERROR] incoming request failed: timeout req-id=__REQ__' }],
   [
     { service: 'bff',     line: 'calling core-ms POST /api/process req-id=__REQ__' },
     { service: 'core-ms', line: '[Error] calling products-ms not found req-id=__REQ__' },

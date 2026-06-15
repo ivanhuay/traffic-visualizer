@@ -7,16 +7,26 @@ export type LogLine = {
   line: string;
 };
 
-type WatchedFile = {
-  service: string;
-  path: string;
+type FileEntry = {
   size: number;
 };
 
 export class LogTailAdapter extends EventEmitter {
-  private watched: WatchedFile[] = [];
+  // filePath → services registered to receive lines from that file
+  private fileServices: Map<string, Set<string>> = new Map();
+  private fileEntries: Map<string, FileEntry> = new Map();
 
   watch(service: string, filePath: string): void {
+    const existing = this.fileServices.get(filePath);
+
+    if (existing) {
+      if (!existing.has(service)) {
+        existing.add(service);
+        console.info(`[LogTailAdapter] Added service "${service}" to existing watcher for ${filePath}`);
+      }
+      return;
+    }
+
     let size = 0;
     try {
       size = statSync(filePath).size;
@@ -24,10 +34,11 @@ export class LogTailAdapter extends EventEmitter {
       size = 0;
     }
 
-    this.watched.push({ service, path: filePath, size });
+    this.fileServices.set(filePath, new Set([service]));
+    this.fileEntries.set(filePath, { size });
 
     watchFile(filePath, { interval: 200 }, (curr) => {
-      const entry = this.watched.find((w) => w.path === filePath);
+      const entry = this.fileEntries.get(filePath);
       if (!entry) return;
 
       if (curr.size <= entry.size) {
@@ -44,21 +55,23 @@ export class LogTailAdapter extends EventEmitter {
       const rl = createInterface({ input: stream, crlfDelay: Infinity });
 
       rl.on('line', (line) => {
-        if (line.trim()) {
-          this.emit('line', { service: entry.service, line } satisfies LogLine);
+        if (!line.trim()) return;
+        for (const svc of this.fileServices.get(filePath) ?? []) {
+          this.emit('line', { service: svc, line } satisfies LogLine);
         }
       });
 
       entry.size = curr.size;
     });
 
-    console.info(`[LogTailAdapter] Watching ${filePath} as service "${service}"`);
+    console.info(`[LogTailAdapter] Watching ${filePath} → service "${service}"`);
   }
 
   stop(): void {
-    for (const entry of this.watched) {
-      unwatchFile(entry.path);
+    for (const filePath of this.fileEntries.keys()) {
+      unwatchFile(filePath);
     }
-    this.watched = [];
+    this.fileServices.clear();
+    this.fileEntries.clear();
   }
 }

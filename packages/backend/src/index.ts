@@ -39,12 +39,21 @@ async function main() {
 
   for (const node of topology.nodes) {
     const svc = patterns.find((p) => p.service === node);
-    const logPath = svc?.logFile
+
+    // Service-level file override
+    const defaultLog = svc?.logFile
       ? svc.logFile
       : svc?.logFileName
         ? resolve(LOG_DIR, svc.logFileName)
         : resolve(LOG_DIR, `${node}.log`);
-    tailAdapter.watch(node, logPath);
+    tailAdapter.watch(node, defaultLog);
+
+    // Pattern-level logFileName: additional files this service should listen on
+    for (const pat of svc?.patterns ?? []) {
+      if (pat.logFileName) {
+        tailAdapter.watch(node, resolve(LOG_DIR, pat.logFileName));
+      }
+    }
   }
 
   await fastify.listen({ port: PORT, host: '0.0.0.0' });
