@@ -30,6 +30,9 @@ async function main() {
   const tailAdapter = new LogTailAdapter();
 
   eventService.on('event', (event) => {
+    const path = event.path ? ` ${event.path}` : '';
+    const error = event.isError ? ' [ERROR]' : '';
+    console.info(`[${event.from}] -> [${event.to}]${path}${error}`);
     wsServer.broadcast(event);
   });
 
