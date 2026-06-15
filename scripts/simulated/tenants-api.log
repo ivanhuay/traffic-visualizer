@@ -1,0 +1,4 @@
+[tenants-api] resolved tenant t_acme req-id=s002
+[tenants-api] resolved tenant t_corp req-id=s009
+[tenants-api] [ERROR] unauthorized tenant lookup req-id=s010
+[tenants-api] resolved tenant t_demo req-id=s011

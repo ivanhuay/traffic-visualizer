@@ -1,0 +1,8 @@
+[core-ms] calling products-ms productsService:getProducts "idempotency-key":"cid_sim001" req-id=s001
+[core-ms] calling products-ms productsService:getProduct "idempotency-key":"cid_sim002" req-id=s003
+[core-ms] calling products-ms catalogService:listProducts "idempotency-key":"cid_sim003" req-id=s005
+[core-ms] calling products-ms productsService:getProducts req-id=s004
+[core-ms] [ERROR] calling products-ms failed: timeout req-id=s007
+[core-ms] calling products-ms inventoryService:checkStock "idempotency-key":"cid_sim004" req-id=s008
+[core-ms] calling products-ms productsService:getProduct req-id=s006
+[core-ms] calling products-ms catalogService:search req-id=s009

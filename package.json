@@ -11,7 +11,10 @@
     "traffic-gen:burst": "tsx scripts/traffic-gen.ts --burst",
     "traffic-gen:fast": "tsx scripts/traffic-gen.ts --rate=10",
     "traffic-gen:errors": "tsx scripts/traffic-gen.ts --errors",
-    "traffic-gen:chaos": "tsx scripts/traffic-gen.ts --rate=8 --errors"
+    "traffic-gen:chaos": "tsx scripts/traffic-gen.ts --rate=8 --errors",
+    "log-sim": "tsx scripts/log-sim.ts",
+    "log-sim:fast": "tsx scripts/log-sim.ts -t 300 -l 4",
+    "log-sim:once": "tsx scripts/log-sim.ts --once"
   },
   "devDependencies": {
     "prettier": "^3.3.3",

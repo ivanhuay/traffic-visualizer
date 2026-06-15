@@ -1,0 +1,16 @@
+[bff] incoming POST /api/resource "idempotency-key":"cid_sim001" req-id=s001
+[bff] calling core-ms GET /api/data "idempotency-key":"cid_sim001" request-id=s001
+[bff] incoming GET /api/tenants req-id=s002
+[bff] calling tenants-api GET /api/tenants req-id=s002
+[bff] incoming POST /api/submit "idempotency-key":"cid_sim002" req-id=s003
+[bff] calling core-ms POST /api/process "idempotency-key":"cid_sim002" req-id=s003
+[bff] incoming GET /api/items req-id=s004
+[bff] calling core-ms GET /api/items req-id=s004
+[bff] incoming POST /api/sync "idempotency-key":"cid_sim003" req-id=s005
+[bff] calling core-ms POST /api/resource "idempotency-key":"cid_sim003" req-id=s005
+[bff] incoming GET /api/resource req-id=s006
+[bff] calling core-ms GET /api/data req-id=s006
+[bff] [Error] upstream error calling core-ms: ECONNREFUSED req-id=s007
+[bff] incoming POST /api/resource "idempotency-key":"cid_sim004" req-id=s008
+[bff] calling core-ms GET /api/data "idempotency-key":"cid_sim004" request-id=s008
+[bff] calling tenants-api GET /api/tenants req-id=s009

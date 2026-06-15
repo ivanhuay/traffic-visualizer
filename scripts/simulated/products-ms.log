@@ -1,0 +1,8 @@
+[products-ms] returning 12 products req-id=s001
+[products-ms] returning product p_001 req-id=s003
+[products-ms] listed 47 products req-id=s005
+[products-ms] returning 8 products req-id=s004
+[products-ms] [ERROR] out of stock product p_999 req-id=s012
+[products-ms] stock check ok req-id=s008
+[products-ms] returning product p_042 req-id=s006
+[products-ms] listed 12 products req-id=s009
