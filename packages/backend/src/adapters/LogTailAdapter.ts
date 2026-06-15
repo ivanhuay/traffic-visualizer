@@ -1,6 +1,6 @@
-import { createReadStream, watchFile, unwatchFile, statSync } from 'fs';
-import { createInterface } from 'readline';
+import { createReadStream, statSync } from 'fs';
 import { EventEmitter } from 'events';
+import chokidar, { FSWatcher } from 'chokidar';
 
 export type LogLine = {
   service: string;
@@ -12,9 +12,10 @@ type FileEntry = {
 };
 
 export class LogTailAdapter extends EventEmitter {
-  // filePath → services registered to receive lines from that file
   private fileServices: Map<string, Set<string>> = new Map();
   private fileEntries: Map<string, FileEntry> = new Map();
+  private lineBuffers: Map<string, string> = new Map();
+  private watcher: FSWatcher | null = null;
 
   watch(service: string, filePath: string): void {
     const existing = this.fileServices.get(filePath);
@@ -36,42 +37,72 @@ export class LogTailAdapter extends EventEmitter {
 
     this.fileServices.set(filePath, new Set([service]));
     this.fileEntries.set(filePath, { size });
+    this.lineBuffers.set(filePath, '');
 
-    watchFile(filePath, { interval: 200 }, (curr) => {
-      const entry = this.fileEntries.get(filePath);
-      if (!entry) return;
-
-      if (curr.size <= entry.size) {
-        entry.size = curr.size;
-        return;
-      }
-
-      const stream = createReadStream(filePath, {
-        start: entry.size,
-        end: curr.size - 1,
-        encoding: 'utf-8',
+    if (!this.watcher) {
+      this.watcher = chokidar.watch([], {
+        persistent: true,
+        ignoreInitial: true,
+        usePolling: false,
+        awaitWriteFinish: false,
       });
 
-      const rl = createInterface({ input: stream, crlfDelay: Infinity });
+      this.watcher.on('add', (fp) => this.handleChange(fp));
+      this.watcher.on('change', (fp) => this.handleChange(fp));
+      this.watcher.on('error', (err) => console.error('[LogTailAdapter] watcher error:', err));
+    }
 
-      rl.on('line', (line) => {
-        if (!line.trim()) return;
-        for (const svc of this.fileServices.get(filePath) ?? []) {
-          this.emit('line', { service: svc, line } satisfies LogLine);
-        }
-      });
-
-      entry.size = curr.size;
-    });
-
+    this.watcher.add(filePath);
     console.info(`[LogTailAdapter] Watching ${filePath} → service "${service}"`);
   }
 
-  stop(): void {
-    for (const filePath of this.fileEntries.keys()) {
-      unwatchFile(filePath);
+  private handleChange(filePath: string): void {
+    const entry = this.fileEntries.get(filePath);
+    if (!entry) return;
+
+    let currSize: number;
+    try {
+      currSize = statSync(filePath).size;
+    } catch {
+      return;
     }
+
+    if (currSize < entry.size) {
+      // truncation / rotation — reset
+      entry.size = 0;
+      this.lineBuffers.set(filePath, '');
+    }
+
+    if (currSize <= entry.size) return;
+
+    const start = entry.size;
+    const end = currSize - 1;
+    entry.size = currSize;
+
+    const stream = createReadStream(filePath, { start, end, encoding: 'utf-8' });
+    let chunk = this.lineBuffers.get(filePath) ?? '';
+
+    stream.on('data', (d: string | Buffer) => { chunk += d.toString(); });
+    stream.on('end', () => {
+      const lines = chunk.split('\n');
+      this.lineBuffers.set(filePath, lines.pop() ?? '');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        for (const svc of this.fileServices.get(filePath) ?? []) {
+          this.emit('line', { service: svc, line } satisfies LogLine);
+        }
+      }
+    });
+    stream.on('error', (err) => {
+      console.error(`[LogTailAdapter] stream error for ${filePath}:`, err);
+    });
+  }
+
+  stop(): void {
+    this.watcher?.close().catch(() => {});
+    this.watcher = null;
     this.fileServices.clear();
     this.fileEntries.clear();
+    this.lineBuffers.clear();
   }
 }

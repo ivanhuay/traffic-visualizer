@@ -35,6 +35,9 @@ importers:
       '@fastify/websocket':
         specifier: ^10.0.1
         version: 10.0.1
+      chokidar:
+        specifier: ^5.0.0
+        version: 5.0.0
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
