@@ -16,6 +16,7 @@ export class LogTailAdapter extends EventEmitter {
   private fileEntries: Map<string, FileEntry> = new Map();
   private lineBuffers: Map<string, string> = new Map();
   private watcher: FSWatcher | null = null;
+  private safetyTimer: NodeJS.Timeout | null = null;
 
   watch(service: string, filePath: string): void {
     const existing = this.fileServices.get(filePath);
@@ -50,6 +51,15 @@ export class LogTailAdapter extends EventEmitter {
       this.watcher.on('add', (fp) => this.handleChange(fp));
       this.watcher.on('change', (fp) => this.handleChange(fp));
       this.watcher.on('error', (err) => console.error('[LogTailAdapter] watcher error:', err));
+
+      // fs.watch can coalesce/drop the last notification in a burst (documented
+      // Node caveat). Re-check every 750ms so a missed event self-heals quickly
+      // instead of waiting indefinitely for the next unrelated write.
+      this.safetyTimer = setInterval(() => {
+        for (const filePath of this.fileEntries.keys()) {
+          this.handleChange(filePath);
+        }
+      }, 750);
     }
 
     this.watcher.add(filePath);
@@ -101,6 +111,10 @@ export class LogTailAdapter extends EventEmitter {
   stop(): void {
     this.watcher?.close().catch(() => {});
     this.watcher = null;
+    if (this.safetyTimer) {
+      clearInterval(this.safetyTimer);
+      this.safetyTimer = null;
+    }
     this.fileServices.clear();
     this.fileEntries.clear();
     this.lineBuffers.clear();
